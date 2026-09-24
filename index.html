@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- Re: Zero - Relieving the World from Zero | v0.1.0 -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Re: Zero - Relieving the World from Zero</title>
+<style>*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#080a10;color:#eee;font-family:system-ui,Segoe UI,sans-serif}body{display:grid;place-items:center}canvas{width:min(100vw,177.78vh);height:min(100vh,56.25vw);image-rendering:pixelated;box-shadow:0 0 40px #000}#hint{position:fixed;bottom:8px;width:100%;text-align:center;color:#778096;font-size:11px;pointer-events:none}</style></head>
+<body><canvas id="game" width="960" height="540"></canvas><div id="hint">WASD / Arrows move • E / Space interact • F attack • M music • R reset</div>
+<script>
+"use strict";
+// Re: Zero - Relieving the World from Zero v0.1.0
+// Self-contained prototype: procedural pixel-art, quests, WebAudio BGM, dialogue and cinematic scenes.
+const c=document.getElementById("game"),x=c.getContext("2d"),W=960,H=540;x.imageSmoothingEnabled=false;
+const K={},J={};addEventListener("keydown",e=>{let k=e.key.toLowerCase();if(!K[k])J[k]=1;K[k]=1;if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault()});addEventListener("keyup",e=>K[e.key.toLowerCase()]=0);
+const S={mode:"title",scene:"arrival",q:0,dlg:null,di:0,cut:0,msg:"",music:true,t:0,deaths:0,cam:{x:0,y:0},
+ p:{x:460,y:320,hp:100,max:100,atk:18,spd:155,face:1},npcs:[],en:[],parts:[]};
+const Q=[
+ ["A World Without Yen","Talk to the market merchant."],
+ ["A Place to Stand","Walk to the marked central plaza."],
+ ["Trouble in the Alley","Survive the encounter."]
+];
+function say(a){S.dlg=a;S.di=0;S.mode="dialogue"}
+function start(){S.mode="play";S.q=0;S.deaths=0;S.p={x:460,y:320,hp:100,max:100,atk:18,spd:155,face:1};S.scene="arrival";S.cut=0;S.msg="You have arrived in an unfamiliar capital.";makeWorld();musicOn()}
+function makeWorld(){S.npcs=[
+ {id:"m",x:350,y:300,col:"#bd8457",name:"Merchant",f:()=>{if(S.q===0){S.q=1;say([["Merchant","Those coins are strange. They have no value here."],["Subaru","So the currency really is different."],["Merchant","Use gold, silver, or copper. The plaza is ahead."],["Subaru","First objective: survive. Got it."]])}else say([["Merchant","Keep your purse close. The market attracts thieves."]])}},
+ {id:"g",x:820,y:390,col:"#7185aa",name:"Guard",f:()=>say([["Guard","The eastern alley is dangerous. Avoid trouble."]])},
+ {id:"w",x:1040,y:255,col:"#a57fb1",name:"Old Woman",f:()=>say([["Old Woman","A strange visitor in a strange outfit. How curious."]])}
+]}
+
+function thugs(){return[{x:1420,y:610,r:17,h:55,m:55,sp:72,a:12,col:"#873f48"},{x:1470,y:680,r:17,h:55,m:55,sp:66,a:12,col:"#674c78"},{x:1370,y:720,r:17,h:65,m:65,sp:62,a:14,col:"#76533a"}]}
+function alley(){S.scene="alley";S.q=2;S.p.x=1260;S.p.y=625;S.en=thugs();say([["Subaru","A shortcut through here should be fine... right?"],["??","Oi. Hand over whatever you've got."],["Subaru","You've got to be kidding me."]])}
+function press(k){return!!J[k]}
+function part(px,py,col,n=8){for(let i=0;i<n;i++)S.parts.push({x:px,y:py,vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*120,l:.4+Math.random()*.5,col})}
+function attack(){for(const e of S.en){let d=Math.hypot(e.x-S.p.x,e.y-S.p.y);if(d<72&&(e.x-S.p.x)*S.p.face>-10){e.h-=S.p.atk;part(e.x,e.y,"#f3d16b",10);beep(240,.06)}}}
+function update(dt){
+ S.t+=dt;
+ if(S.mode==="title"){if(press("enter")||press(" "))start();Jclear();return}
+ if(S.mode==="dialogue"){if(press("e")||press(" ")||press("enter")){S.di++;beep(500,.04);if(S.di>=S.dlg.length){S.dlg=null;S.mode="play"}}Jclear();return}
+ if(S.mode==="cut"){S.cut+=dt;if(S.cut>3.2){S.mode="play";S.msg=S.scene==="arrival"?"Explore the capital and learn how this world works.":"Chapter 1 complete — the story has only begun."}Jclear();return}
+ let dx=(K.d||K.arrowright?1:0)-(K.a||K.arrowleft?1:0),dy=(K.s||K.arrowdown?1:0)-(K.w||K.arrowup?1:0),l=Math.hypot(dx,dy)||1;
+ S.p.x+=dx/l*S.p.spd*dt;S.p.y+=dy/l*S.p.spd*dt;if(dx)S.p.face=Math.sign(dx);
+ S.p.x=Math.max(70,Math.min(1730,S.p.x));S.p.y=Math.max(80,Math.min(1020,S.p.y));
+ if(press("e")||press(" ")){let n=S.npcs.find(n=>Math.hypot(n.x-S.p.x,n.y-S.p.y)<58);if(n)n.f();else if(S.q===1&&S.p.x>700&&S.p.x<980&&S.p.y>320&&S.p.y<530)alley()}
+ if(press("f")&&S.scene==="alley")attack();
+ for(const e of S.en){let d=Math.hypot(S.p.x-e.x,S.p.y-e.y);if(d<280){e.x+=(S.p.x-e.x)/Math.max(1,d)*e.sp*dt;e.y+=(S.p.y-e.y)/Math.max(1,d)*e.sp*dt}e.cd=(e.cd||0)-dt;if(d<34&&e.cd<=0){S.p.hp-=e.a;e.cd=.8;part(S.p.x,S.p.y,"#ff7070",6);beep(110,.06)}}
+ S.en=S.en.filter(e=>e.h>0);
+ if(S.p.hp<=0){S.deaths++;S.q=2;S.p.hp=100;S.p.x=1260;S.p.y=625;S.en=thugs();S.scene="alley";S.msg="Death is not the end. Something has reset...";say([["Subaru","...Why does this feel familiar?"]])}
+ if(S.scene==="alley"&&!S.en.length){S.mode="cut";S.cut=0}
+ for(const p of S.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt}S.parts=S.parts.filter(p=>p.l>0);
+ S.cam.x=Math.max(0,Math.min(840,S.p.x-W/2));S.cam.y=Math.max(0,Math.min(560,S.p.y-H/2));
+ if(press("r")){S.q=2;S.p.x=1260;S.p.y=625;S.en=thugs();S.scene="alley";S.msg="Timeline reset."; }
+ Jclear()
+}
+function Jclear(){for(const k in J)delete J[k]}
+function world(){
+ x.fillStyle="#26352b";x.fillRect(0,0,W,H);let ox=-S.cam.x,oy=-S.cam.y;
+ x.strokeStyle="rgba(255,255,255,.025)";for(let a=ox%48;a<W;a+=48){x.beginPath();x.moveTo(a,0);x.lineTo(a,H);x.stroke()}for(let a=oy%48;a<H;a+=48){x.beginPath();x.moveTo(0,a);x.lineTo(W,a);x.stroke()}
+ box(0+ox,420+oy,1800,210,"#87735b");box(700+ox,0+oy,200,1100,"#87735b");box(0+ox,505+oy,1800,30,"#a28b6d");box(785+ox,0+oy,30,1100,"#a28b6d");
+ build(70,90,430,260,"#5a4350","MARKET");build(1000,90,400,250,"#4a5364","GUILD");build(80,720,480,230,"#55503f","HOMES");build(1050,760,520,210,"#4c424c","WAREHOUSE");
+ x.beginPath();x.arc(800+ox,425+oy,125,0,7);x.fillStyle="#aa9678";x.fill();txt("MARKET PLAZA",800+ox,430+oy,14,"rgba(50,38,28,.65)","center");
+ box(1200+ox,520+oy,500,260,"#292529");txt("ALLEY",1450+ox,550+oy,12,"#665c62","center");
+ for(const n of S.npcs)char(n.x+ox,n.y+oy,14,n.col);for(const e of S.en)enemy(e,ox,oy);player(S.p.x+ox,S.p.y+oy);
+ for(const p of S.parts){x.globalAlpha=Math.max(0,p.l*2);x.fillStyle=p.col;x.fillRect(p.x+ox,p.y+oy,4,4);x.globalAlpha=1}
+ if(S.q===0)mark(350+ox,265+oy,"!");else if(S.q===1)mark(800+ox,300+oy,"?")
+}
+function box(a,b,w,h,c){x.fillStyle=c;x.fillRect(a,b,w,h)}function build(a,b,w,h,c,t){box(a-S.cam.x,b-S.cam.y,w,h,c);txt(t,a-S.cam.x+w/2,b-S.cam.y+34,13,"rgba(255,255,255,.42)","center")}
+function char(a,b,r,col){x.fillStyle="rgba(0,0,0,.25)";x.fillRect(a-r,b+r,r*2,5);x.fillStyle=col;x.beginPath();x.arc(a,b-9,r*.72,0,7);x.fill();x.fillRect(a-r,b-2,r*2,r*1.5);x.fillStyle="#eee";x.fillRect(a-r*.4,b-12,3,3);x.fillRect(a+r*.2,b-12,3,3)}
+function enemy(e,ox,oy){char(e.x+ox,e.y+oy,e.r,e.col);x.fillStyle="#24171a";x.fillRect(e.x+ox-16,e.y+oy-e.r-12,32,4);x.fillStyle="#d75a61";x.fillRect(e.x+ox-16,e.y+oy-e.r-12,32*Math.max(0,e.h/e.m),4)}
+function player(a,b){x.fillStyle="rgba(0,0,0,.3)";x.fillRect(a-14,b+13,28,5);x.fillStyle="#333b50";x.fillRect(a-12,b-2,24,27);x.fillStyle="#e4b092";x.beginPath();x.arc(a,b-13,11,0,7);x.fill();x.fillStyle="#161b27";x.fillRect(a-10,b-22,20,8);x.fillRect(a-12,b-18,5,5);x.fillStyle="#d6d9e0";x.fillRect(a-7,b+3,14,5)}
+function mark(a,b,s){x.fillStyle="#f2c14e";x.beginPath();x.moveTo(a,b-25);x.lineTo(a+10,b-10);x.lineTo(a,b+5);x.lineTo(a-10,b-10);x.fill();txt(s,a,b-10,13,"#211b0c","center")}
+function hud(){panel(16,16,300,110,.84);txt("QUEST",30,41,12,"#d7b65d");txt(Q[S.q]?.[0]||"Journey",30,64,18,"#fff");txt(Q[S.q]?.[1]||"",30,89,13,"#aeb6c9");panel(W-235,16,219,62,.84);txt("HP",W-220,39,12,"#b7bdca");box(W-185,28,150,12,"#292e3b");box(W-185,28,150*Math.max(0,S.p.hp/S.p.max),"#bb4f5a");txt(Math.max(0,Math.ceil(S.p.hp))+" / "+S.p.max,W-110,58,13,"#ddd","center");txt(S.music?"♪ BGM":"♪ muted",W-220,96,12,"#9ca5b8");if(S.msg){panel(230,H-62,500,42,.85);txt(S.msg,W/2,H-36,14,"#e6e8ee","center")}}
+function panel(a,b,w,h,o=.9){x.fillStyle="rgba(7,9,16,"+o+")";x.fillRect(a,b,w,h);x.strokeStyle="rgba(255,255,255,.16)";x.strokeRect(a+.5,b+.5,w-1,h-1)}
+function txt(s,a,b,z=16,col="#fff",al="left"){x.font=z+"px system-ui";x.fillStyle=col;x.textAlign=al;x.fillText(s,a,b)}
+function dialogue(){box(0,0,W,H,"rgba(0,0,0,.38)");let d=S.dlg[S.di];panel(70,H-165,W-140,125,.95);txt(d[0],95,H-130,20,"#e5bd62");txt(d[1],95,H-96,18,"#f4f4f6");txt("E / SPACE",W-100,H-55,12,"#8e98ad","right")}
+function cutscene(){box(0,0,W,H,"rgba(0,0,0,.55)");if(S.scene==="arrival"){txt("A strange night ended without warning.",W/2,205,25,"#fff","center");txt("THE CAPITAL OF LUGUNICA",W/2,250,31,"#e5bd62","center");txt("A boy from another world takes his first step.",W/2,290,17,"#c0c6d5","center")}else{txt("CHAPTER 1",W/2,195,15,"#e5bd62","center");txt("THE FIRST TURN OF THE WHEEL",W/2,235,30,"#fff","center");txt("To be continued...",W/2,285,18,"#aeb5c5","center")}}
+function title(){box(0,0,W,H,"#090b13");for(let i=0;i<80;i++){x.fillStyle="rgba(255,255,255,"+(.05+i%4*.02)+")";x.fillRect(i*137%W,i*73%H,2,2)}txt("RE: ZERO",W/2,170,58,"#f1f2f7","center");txt("RELIEVING THE WORLD FROM ZERO",W/2,214,20,"#b9c0d8","center");txt("CHAPTER 1 • THE UNEXPECTED ARRIVAL",W/2,280,15,"#7d8aa8","center");panel(315,330,330,92,.84);txt("ENTER / SPACE",W/2,367,20,"#fff","center");txt("Begin the journey",W/2,397,16,"#aab1c5","center");txt("2D TOP-DOWN RPG PROTOTYPE",W/2,485,12,"#606a82","center")}
+function beep(freq,d){if(!S.music)return;try{let o=A.createOscillator(),g=A.createGain();o.type="square";o.frequency.value=freq;g.gain.setValueAtTime(.025,A.currentTime);g.gain.exponentialRampToValueAtTime(.001,A.currentTime+d);o.connect(g);g.connect(A.destination);o.start();o.stop(A.currentTime+d)}catch(e){}}
+let A=null,osc=null,gain=null;
+function musicOn(){if(!S.music)return;try{if(!A)A=new(window.AudioContext||window.webkitAudioContext)();if(osc)return;osc=A.createOscillator();gain=A.createGain();osc.type="triangle";osc.frequency.value=196;gain.gain.value=.018;osc.connect(gain);gain.connect(A.destination);osc.start()}catch(e){}}
+function musicOff(){try{if(osc){osc.stop();osc.disconnect();osc=null}}catch(e){}}
+function draw(){if(S.mode==="title")title();else{world();if(S.mode==="play")hud();if(S.mode==="dialogue")dialogue();if(S.mode==="cut")cutscene()}}
+function loop(t){let dt=Math.min(.033,(t-(loop.last||t))/1000);loop.last=t;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+addEventListener("keydown",e=>{if(e.key.toLowerCase()==="m"){S.music=!S.music;if(S.music)musicOn();else musicOff()}});
+</script></body></html>
