@@ -18,7 +18,7 @@ const Q=[
  ["Trouble in the Alley","Survive the encounter."]
 ];
 function say(a){S.dlg=a;S.di=0;S.mode="dialogue"}
-function start(){S.mode="play";S.q=0;S.deaths=0;S.p={x:460,y:320,hp:100,max:100,atk:18,spd:155,face:1};S.scene="arrival";S.cut=0;S.msg="You have arrived in an unfamiliar capital.";makeWorld();musicOn()}
+function start(){S.mode="cut";S.q=0;S.deaths=0;S.p={x:460,y:320,hp:100,max:100,atk:18,spd:155,face:1};S.scene="arrival";S.cut=0;S.msg="You have arrived in an unfamiliar capital.";makeWorld();musicOn()}
 function makeWorld(){S.npcs=[
  {id:"m",x:350,y:300,col:"#bd8457",name:"Merchant",f:()=>{if(S.q===0){S.q=1;say([["Merchant","Those coins are strange. They have no value here."],["Subaru","So the currency really is different."],["Merchant","Use gold, silver, or copper. The plaza is ahead."],["Subaru","First objective: survive. Got it."]])}else say([["Merchant","Keep your purse close. The market attracts thieves."]])}},
  {id:"g",x:820,y:390,col:"#7185aa",name:"Guard",f:()=>say([["Guard","The eastern alley is dangerous. Avoid trouble."]])},
@@ -66,7 +66,7 @@ function char(a,b,r,col){x.fillStyle="rgba(0,0,0,.25)";x.fillRect(a-r,b+r,r*2,5)
 function enemy(e,ox,oy){char(e.x+ox,e.y+oy,e.r,e.col);x.fillStyle="#24171a";x.fillRect(e.x+ox-16,e.y+oy-e.r-12,32,4);x.fillStyle="#d75a61";x.fillRect(e.x+ox-16,e.y+oy-e.r-12,32*Math.max(0,e.h/e.m),4)}
 function player(a,b){x.fillStyle="rgba(0,0,0,.3)";x.fillRect(a-14,b+13,28,5);x.fillStyle="#333b50";x.fillRect(a-12,b-2,24,27);x.fillStyle="#e4b092";x.beginPath();x.arc(a,b-13,11,0,7);x.fill();x.fillStyle="#161b27";x.fillRect(a-10,b-22,20,8);x.fillRect(a-12,b-18,5,5);x.fillStyle="#d6d9e0";x.fillRect(a-7,b+3,14,5)}
 function mark(a,b,s){x.fillStyle="#f2c14e";x.beginPath();x.moveTo(a,b-25);x.lineTo(a+10,b-10);x.lineTo(a,b+5);x.lineTo(a-10,b-10);x.fill();txt(s,a,b-10,13,"#211b0c","center")}
-function hud(){panel(16,16,300,110,.84);txt("QUEST",30,41,12,"#d7b65d");txt(Q[S.q]?.[0]||"Journey",30,64,18,"#fff");txt(Q[S.q]?.[1]||"",30,89,13,"#aeb6c9");panel(W-235,16,219,62,.84);txt("HP",W-220,39,12,"#b7bdca");box(W-185,28,150,12,"#292e3b");box(W-185,28,150*Math.max(0,S.p.hp/S.p.max),"#bb4f5a");txt(Math.max(0,Math.ceil(S.p.hp))+" / "+S.p.max,W-110,58,13,"#ddd","center");txt(S.music?"♪ BGM":"♪ muted",W-220,96,12,"#9ca5b8");if(S.msg){panel(230,H-62,500,42,.85);txt(S.msg,W/2,H-36,14,"#e6e8ee","center")}}
+function hud(){panel(16,16,300,110,.84);txt("QUEST",30,41,12,"#d7b65d");txt(Q[S.q]?.[0]||"Journey",30,64,18,"#fff");txt(Q[S.q]?.[1]||"",30,89,13,"#aeb6c9");panel(W-235,16,219,62,.84);txt("HP",W-220,39,12,"#b7bdca");box(W-185,28,150,12,"#292e3b");box(W-185,28,150*Math.max(0,S.p.hp/S.p.max),12,"#bb4f5a");txt(Math.max(0,Math.ceil(S.p.hp))+" / "+S.p.max,W-110,58,13,"#ddd","center");txt(S.music?"♪ BGM":"♪ muted",W-220,96,12,"#9ca5b8");if(S.msg){panel(230,H-62,500,42,.85);txt(S.msg,W/2,H-36,14,"#e6e8ee","center")}}
 function panel(a,b,w,h,o=.9){x.fillStyle="rgba(7,9,16,"+o+")";x.fillRect(a,b,w,h);x.strokeStyle="rgba(255,255,255,.16)";x.strokeRect(a+.5,b+.5,w-1,h-1)}
 function txt(s,a,b,z=16,col="#fff",al="left"){x.font=z+"px system-ui";x.fillStyle=col;x.textAlign=al;x.fillText(s,a,b)}
 function dialogue(){box(0,0,W,H,"rgba(0,0,0,.38)");let d=S.dlg[S.di];panel(70,H-165,W-140,125,.95);txt(d[0],95,H-130,20,"#e5bd62");txt(d[1],95,H-96,18,"#f4f4f6");txt("E / SPACE",W-100,H-55,12,"#8e98ad","right")}
